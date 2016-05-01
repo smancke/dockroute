@@ -22,7 +22,7 @@ func NewProxy(b Backend) *Proxy {
 
 func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	name := strings.TrimSuffix(r.Host, p.hostSuffix)
-	host, port, err := p.backend.GetService(name)
+	hostAndPort, err := p.backend.GetService(name)
 	if err != nil {
 		rLog(r).WithError(err).Error("Error fetching service.")
 		httpError(w, http.StatusBadGateway)
@@ -30,20 +30,14 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	director := func(req *http.Request) {
-		rLog(r).Info("req before")
-		if r.TLS != nil {
-			req.URL.Scheme = "https"
-		} else {
-			req.URL.Scheme = "http"
-		}
-		req.URL.Host = host + ":" + port
+		req.URL.Scheme = "http"
+		req.URL.Host = hostAndPort
 		req.Host = req.URL.Host
-		rLog(r).Info("req after")
 	}
 	reverseProxy := &httputil.ReverseProxy{Director: director}
 	reverseProxy.ServeHTTP(w, r)
-	rLog(r).WithField("target_host", host).
-		WithField("target_port", host).
+	rLog(r).WithField("target_host", hostAndPort).
+		WithField("target_port", hostAndPort).
 		Info("served.")
 }
 

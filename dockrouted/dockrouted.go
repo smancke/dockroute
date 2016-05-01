@@ -31,6 +31,8 @@ func Main() {
 	args := loadArgs()
 	if args.LogJSON {
 		log.SetFormatter(&logstash.LogstashFormatter{TimestampFormat: time.RFC3339Nano})
+	} else {
+		//log.SetFormatter(&log.TextFormatter{DisableColors: true})
 	}
 	if args.LogInfo {
 		log.SetLevel(log.InfoLevel)
